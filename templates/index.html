@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Database - Inicio</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #7c3aed;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px -3px rgba(0,0,0,0.1), 0 4px 10px -4px rgba(0,0,0,0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .navbar-nav {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 5rem 2rem 6rem;
+            text-align: center;
+            flex: 0 0 auto;
+            clip-path: ellipse(150% 100% at 50% 0%);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.7;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 2rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-white {
+            background: white;
+            color: var(--primary);
+        }
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn-outline-white {
+            border: 2px solid rgba(255,255,255,0.5);
+            color: white;
+        }
+        .btn-outline-white:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: white;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin: -4rem auto 3rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover { transform: translateY(-4px); }
+
+        .stat-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 3rem 0 1rem;
+            color: var(--text);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-light);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+            font-size: 1.1rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .feature-card {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .feature-card p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .tech-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: #eff6ff;
+            color: var(--primary);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            border-top: 1px solid var(--border);
+            margin-top: 3rem;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .hero { clip-path: ellipse(200% 100% at 50% 0%); padding: 3rem 1.5rem 5rem; }
+            .section-title { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">🔗 URL Database</a>
+        <div class="navbar-nav">
+            <a href="/" class="nav-link active">🏠 Inicio</a>
+            <a href="/url_list" class="nav-link">📋 Lista</a>
+            <a href="/dashboard" class="nav-link">📊 Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <h1>Base de Datos de URLs</h1>
+        <p>Monitorea, verifica y analiza cientos de URLs de avisos DMCA recopilados de Lumen. Una herramienta completa para auditores, investigadores y curiosos de la web.</p>
+        <div class="hero-buttons">
+            <a href="/url_list" class="btn btn-white">📋 Explorar URLs</a>
+            <a href="/dashboard" class="btn btn-outline-white">📊 Ver Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if stats %}
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🔗</div>
+                <div class="stat-value">{{ stats.total }}</div>
+                <div class="stat-label">Total URLs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📂</div>
+                <div class="stat-value">{{ stats.tipos|length }}</div>
+                <div class="stat-label">Tipos de contenido</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🌍</div>
+                <div class="stat-value">{{ stats.paises }}</div>
+                <div class="stat-label">Países</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📄</div>
+                <div class="stat-value" style="font-size:1.2rem;">{{ stats.ultimo_documento[:30] }}...</div>
+                <div class="stat-label">Último documento</div>
+            </div>
+        </div>
+        {% else %}
+        <div class="stats-grid">
+            <div class="stat-card" style="grid-column:1/-1; color:var(--text-light);">
+                <p>⚠️ No se encontró el archivo <code>urls.json</code>. Asegúrate de que esté en la raíz del proyecto.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <h2 class="section-title">🧩 Funcionalidades principales</h2>
+        <p class="section-subtitle">Cada sección está diseñada para cubrir una etapa del análisis de URLs</p>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h3>Lista Inteligente</h3>
+                <p>Explora las URLs con paginación, filtros por tipo, país y documento. Busca cualquier término al instante y verifica la disponibilidad de cada enlace con un solo clic.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✅</div>
+                <h3>Verificación en tiempo real</h3>
+                <p>Comprueba si una URL sigue accesible mediante peticiones HTTP (HEAD/GET). Cada resultado se guarda en local para futuras consultas. Re-verifica tantas veces como necesites.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Dashboard Analítico</h3>
+                <p>Gráficos interactivos con Chart.js: distribución por tipo, país, documento y dominio. KPIs de verificaciones y accesos. Todo actualizado en tiempo real desde localStorage.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔗</div>
+                <h3>Registro de accesos</h3>
+                <p>Cada clic en una URL queda registrado con fecha y hora. Visualiza el historial completo y las URLs más visitadas desde el dashboard.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💾</div>
+                <h3>Persistencia local</h3>
+                <p>Verificaciones, filtros, página actual e historial de accesos se guardan en localStorage. Cierra el navegador y retoma exactamente donde lo dejaste.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📥</div>
+                <h3>Exportación de datos</h3>
+                <p>Descarga la lista filtrada en formato CSV o JSON con un solo clic. Ideal para análisis externos, informes o integración con otras herramientas.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3>Verificación por lotes</h3>
+                <p>Verifica todas las URLs visibles en la página actual de una sola vez, con un intervalo controlado para no saturar la red.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🗑️</div>
+                <h3>Limpieza de datos</h3>
+                <p>Borra todas las verificaciones, accesos y filtros guardados con un solo botón y empieza de cero cuando quieras.</p>
+            </div>
+        </div>
+
+        <h2 class="section-title">🛠️ Stack tecnológico</h2>
+        <div class="tech-stack">
+            <span class="tech-badge">Python 3</span>
+            <span class="tech-badge">Flask</span>
+            <span class="tech-badge">Jinja2</span>
+            <span class="tech-badge">Chart.js</span>
+            <span class="tech-badge">JavaScript (Vanilla)</span>
+            <span class="tech-badge">localStorage API</span>
+            <span class="tech-badge">Fetch API</span>
+            <span class="tech-badge">HTML5</span>
+            <span class="tech-badge">CSS3 (Grid/Flexbox)</span>
+            <span class="tech-badge">Lumen Database</span>
+        </div>
+
+        <h2 class="section-title">🚀 ¿Cómo empezar?</h2>
+        <div class="features" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <div class="feature-card">
+                <div class="feature-icon">1️⃣</div>
+                <h3>Explora la lista</h3>
+                <p>Ve a la sección Lista y navega por las URLs. Usa los filtros para encontrar exactamente lo que buscas.</p>
+                <a href="/url_list" class="btn btn-white" style="background:var(--primary); color:white; margin-top:1rem;">Ir a la lista →</a>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">2️⃣</div>
+                <h3>Verifica disponibilidad</h3>
+                <p>Haz clic en "Verificar" en cualquier URL o usa "Verificar visibles" para comprobar todas las de la página actual.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">3️⃣</div>
+                <h3>Analiza los datos</h3>
+                <p>Visita el Dashboard para ver gráficos, KPIs, historial de verificaciones y las URLs más accedidas.</p>
+                <a href="/dashboard" class="btn btn-white" style="background:var(--secondary); color:white; margin-top:1rem;">Ver Dashboard →</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Herramienta de análisis para fines educativos · Datos extraídos de Lumen Database · Construido con Flask, Chart.js y localStorage</p>
+    </div>
+</body>
+</html>

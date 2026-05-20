@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - URL Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #7c3aed;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .navbar {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-brand { font-size: 1.25rem; font-weight: 700; color: var(--primary); text-decoration: none; }
+        .navbar-nav { display: flex; gap: 1.5rem; align-items: center; }
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--primary); background: #eff6ff; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .kpi-card {
+            background: var(--card);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .kpi-value { font-size: 2.5rem; font-weight: 700; color: var(--primary); }
+        .kpi-label { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+        .kpi-value.success { color: #16a34a; }
+        .kpi-value.danger { color: #dc2626; }
+        .kpi-value.warning { color: #f59e0b; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        .card {
+            background: var(--card);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .card-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+        .chart-container { position: relative; width: 100%; max-height: 350px; }
+        .chart-container canvas { width: 100% !important; }
+        .full-width { grid-column: 1 / -1; }
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+        .recent-checks, .access-log, .top-urls {
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+        .recent-checks table, .access-log table, .top-urls table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .recent-checks th, .recent-checks td,
+        .access-log th, .access-log td,
+        .top-urls th, .top-urls td {
+            padding: 0.4rem 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .recent-checks th, .access-log th, .top-urls th {
+            font-weight: 600;
+            color: var(--text-light);
+            position: sticky;
+            top: 0;
+            background: var(--card);
+        }
+        .badge-status {
+            display: inline-block;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.3rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-ok { background: #dcfce7; color: #166534; }
+        .badge-error { background: #fef2f2; color: #991b1b; }
+        .access-log a, .top-urls a { color: var(--primary); text-decoration: none; }
+        .access-log a:hover, .top-urls a:hover { text-decoration: underline; }
+
+        .btn-clear {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+        .btn-clear:hover { background: #b91c1c; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">📊 URL Analytics</a>
+        <div class="navbar-nav">
+            <a href="/" class="nav-link">🏠 Inicio</a>
+            <a href="/url_list" class="nav-link">📋 Lista</a>
+            <a href="/dashboard" class="nav-link active">📊 Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- KPIs generales (servidor) -->
+        <div class="kpi-grid" id="kpiGrid">
+            <div class="kpi-card"><div class="kpi-value" id="kpiTotal">-</div><div class="kpi-label">Total URLs</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="kpiTipos">-</div><div class="kpi-label">Tipos diferentes</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="kpiPaises">-</div><div class="kpi-label">Países</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="kpiDocumentos">-</div><div class="kpi-label">Documentos</div></div>
+        </div>
+
+        <!-- KPIs de verificaciones (local) -->
+        <div class="kpi-grid" id="checksKpiGrid">
+            <div class="kpi-card"><div class="kpi-value" id="kpiChecked">0</div><div class="kpi-label">URLs Verificadas</div></div>
+            <div class="kpi-card"><div class="kpi-value success" id="kpiReachable">0</div><div class="kpi-label">Alcanzables</div></div>
+            <div class="kpi-card"><div class="kpi-value danger" id="kpiUnreachable">0</div><div class="kpi-label">No alcanzables</div></div>
+            <div class="kpi-card"><div class="kpi-value warning" id="kpiSuccessRate">0%</div><div class="kpi-label">Tasa de éxito</div></div>
+        </div>
+
+        <!-- KPIs de accesos (local) -->
+        <div class="kpi-grid" id="accessKpiGrid">
+            <div class="kpi-card"><div class="kpi-value" id="kpiAccessTotal">0</div><div class="kpi-label">Accesos registrados</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="kpiAccessToday">0</div><div class="kpi-label">Hoy</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="kpiAccessUnique">0</div><div class="kpi-label">URLs únicas visitadas</div></div>
+            <div class="kpi-card"><div class="kpi-value" id="kpiAccessLast">-</div><div class="kpi-label">Último acceso</div></div>
+        </div>
+
+        <!-- Botón limpiar datos -->
+        <button class="btn-clear" onclick="clearAllData()">🗑️ Limpiar todos los datos guardados</button>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-title">📂 Distribución por Tipo</div>
+                <div class="chart-container"><canvas id="chartTipo"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title">🌍 Distribución por País</div>
+                <div class="chart-container"><canvas id="chartPais"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📄 Documentos (Top 5)</div>
+                <div class="chart-container"><canvas id="chartDocumento"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title">🔝 Top 10 Dominios</div>
+                <div class="chart-container"><canvas id="chartDominios"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Gráficos de verificaciones -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-title">✅ Estado de verificaciones</div>
+                <div class="chart-container"><canvas id="chartVerificaciones"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📈 Verificaciones en el tiempo</div>
+                <div class="chart-container"><canvas id="chartTimeline"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Últimos checks -->
+        <div class="card full-width">
+            <div class="card-title">🕒 Últimos checks realizados</div>
+            <div class="recent-checks" id="recentChecks">
+                <p style="color:var(--text-light);">No hay verificaciones aún.</p>
+            </div>
+        </div>
+
+        <!-- Historial de accesos a URLs -->
+        <div class="card full-width" style="margin-top:1.5rem;">
+            <div class="card-title">🔗 Historial de accesos a URLs (clicleable)</div>
+            <div class="access-log" id="accessLog">
+                <p style="color:var(--text-light);">No hay accesos registrados aún.</p>
+            </div>
+        </div>
+
+        <!-- Top URLs más accedidas -->
+        <div class="card full-width" style="margin-top:1.5rem;">
+            <div class="card-title">⭐ URLs más visitadas</div>
+            <div class="top-urls" id="topUrls">
+                <p style="color:var(--text-light);">No hay accesos registrados aún.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Herramienta de análisis para fines educativos · Datos extraídos de Lumen Database</p>
+    </div>
+
+    <script>
+        const colors = ['#2563eb','#16a34a','#dc2626','#f59e0b','#8b5cf6','#06b6d4','#ec4899','#f97316','#84cc16','#14b8a6'];
+
+        // 1. Cargar estadísticas del servidor
+        fetch('/api/stats')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('kpiTotal').textContent = data.total;
+                document.getElementById('kpiTipos').textContent = Object.keys(data.tipos).length;
+                document.getElementById('kpiPaises').textContent = Object.keys(data.paises).length;
+                document.getElementById('kpiDocumentos').textContent = Object.keys(data.documentos).length;
+
+                new Chart(document.getElementById('chartTipo'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(data.tipos),
+                        datasets: [{
+                            data: Object.values(data.tipos),
+                            backgroundColor: colors,
+                            borderWidth: 2, borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } } }
+                    }
+                });
+
+                new Chart(document.getElementById('chartPais'), {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(data.paises),
+                        datasets: [{
+                            label: 'URLs',
+                            data: Object.values(data.paises),
+                            backgroundColor: colors, borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 50 } } }
+                    }
+                });
+
+                const docs = Object.entries(data.documentos).sort((a,b) => b[1]-a[1]).slice(0,5);
+                new Chart(document.getElementById('chartDocumento'), {
+                    type: 'bar',
+                    data: {
+                        labels: docs.map(d => d[0].length > 20 ? d[0].substring(0,20)+'...' : d[0]),
+                        datasets: [{
+                            label: 'URLs',
+                            data: docs.map(d => d[1]),
+                            backgroundColor: colors, borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true } }
+                    }
+                });
+
+                const dominios = Object.entries(data.top_dominios);
+                new Chart(document.getElementById('chartDominios'), {
+                    type: 'bar',
+                    data: {
+                        labels: dominios.map(d => d[0]),
+                        datasets: [{
+                            label: 'URLs',
+                            data: dominios.map(d => d[1]),
+                            backgroundColor: colors, borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true } }
+                    }
+                });
+            })
+            .catch(err => console.error('Error cargando estadísticas:', err));
+
+        // 2. Cargar verificaciones desde localStorage
+        function loadChecks() {
+            try {
+                const saved = localStorage.getItem('url_check_results');
+                return saved ? JSON.parse(saved) : {};
+            } catch(e) { return {}; }
+        }
+
+        function renderChecksDashboard() {
+            const checks = loadChecks();
+            const entries = Object.entries(checks);
+            const totalChecked = entries.length;
+            let reachable = 0, unreachable = 0;
+            const timeline = {};
+
+            entries.forEach(([url, check]) => {
+                if (check.reachable) reachable++;
+                else unreachable++;
+                const date = new Date(check.timestamp).toISOString().slice(0,10);
+                timeline[date] = (timeline[date] || 0) + 1;
+            });
+
+            document.getElementById('kpiChecked').textContent = totalChecked;
+            document.getElementById('kpiReachable').textContent = reachable;
+            document.getElementById('kpiUnreachable').textContent = unreachable;
+            const rate = totalChecked ? Math.round((reachable / totalChecked) * 100) : 0;
+            document.getElementById('kpiSuccessRate').textContent = rate + '%';
+
+            new Chart(document.getElementById('chartVerificaciones'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Alcanzable', 'No alcanzable'],
+                    datasets: [{
+                        data: [reachable, unreachable],
+                        backgroundColor: ['#16a34a', '#dc2626'],
+                        borderWidth: 2, borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } } }
+                }
+            });
+
+            const sortedDates = Object.keys(timeline).sort();
+            new Chart(document.getElementById('chartTimeline'), {
+                type: 'line',
+                data: {
+                    labels: sortedDates,
+                    datasets: [{
+                        label: 'Verificaciones',
+                        data: sortedDates.map(d => timeline[d]),
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        x: { title: { display: true, text: 'Fecha' } }
+                    }
+                }
+            });
+
+            // Últimos 10 checks
+            const sortedEntries = entries.sort((a,b) => b[1].timestamp - a[1].timestamp).slice(0,10);
+            const recentDiv = document.getElementById('recentChecks');
+            if (sortedEntries.length === 0) {
+                recentDiv.innerHTML = '<p style="color:var(--text-light);">No hay verificaciones aún.</p>';
+                return;
+            }
+            let html = '<table><thead><tr><th>URL</th><th>Estado</th><th>Código</th><th>Fecha</th></tr></thead><tbody>';
+            sortedEntries.forEach(([url, check]) => {
+                const status = check.reachable ? '<span class="badge-status badge-ok">OK</span>' : '<span class="badge-status badge-error">Error</span>';
+                const code = check.statusCode || (check.reachable ? '200' : '-');
+                const date = new Date(check.timestamp).toLocaleString();
+                html += `<tr><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${url}">${url}</td>
+                         <td>${status}</td><td>${code}</td><td>${date}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            recentDiv.innerHTML = html;
+        }
+
+        // 3. Cargar accesos desde localStorage
+        function loadAccessLog() {
+            try {
+                const saved = localStorage.getItem('url_access_log');
+                return saved ? JSON.parse(saved) : [];
+            } catch(e) { return []; }
+        }
+
+        function renderAccessDashboard() {
+            const log = loadAccessLog();
+            const total = log.length;
+            document.getElementById('kpiAccessTotal').textContent = total;
+
+            if (total === 0) {
+                document.getElementById('accessLog').innerHTML = '<p style="color:var(--text-light);">No hay accesos registrados aún.</p>';
+                document.getElementById('topUrls').innerHTML = '<p style="color:var(--text-light);">No hay accesos registrados aún.</p>';
+                document.getElementById('kpiAccessToday').textContent = '0';
+                document.getElementById('kpiAccessUnique').textContent = '0';
+                document.getElementById('kpiAccessLast').textContent = '-';
+                return;
+            }
+
+            // Accesos hoy
+            const today = new Date().toISOString().slice(0,10);
+            const todayAccess = log.filter(entry => entry.fecha.startsWith(today)).length;
+            document.getElementById('kpiAccessToday').textContent = todayAccess;
+
+            // URLs únicas
+            const uniqueUrls = new Set(log.map(entry => entry.url)).size;
+            document.getElementById('kpiAccessUnique').textContent = uniqueUrls;
+
+            // Último acceso
+            const lastAccess = log[log.length - 1];
+            document.getElementById('kpiAccessLast').textContent = new Date(lastAccess.timestamp).toLocaleString();
+
+            // Tabla de accesos recientes
+            const recentAccess = [...log].reverse().slice(0, 20);
+            const accessDiv = document.getElementById('accessLog');
+            let html = '<table><thead><tr><th>URL</th><th>ID</th><th>Tipo</th><th>Fecha</th></tr></thead><tbody>';
+            recentAccess.forEach(entry => {
+                const url = entry.url;
+                const id = entry.id;
+                const tipo = entry.tipo || 'video';
+                const fecha = new Date(entry.timestamp).toLocaleString();
+                html += `<tr>
+                    <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${url}">
+                        <a href="https://${url}" target="_blank" rel="noopener noreferrer">${url}</a>
+                    </td>
+                    <td>#${id}</td>
+                    <td>${tipo}</td>
+                    <td>${fecha}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            accessDiv.innerHTML = html;
+
+            // Top URLs más accedidas
+            const urlCounts = {};
+            log.forEach(entry => {
+                const key = entry.url;
+                if (!urlCounts[key]) {
+                    urlCounts[key] = { count: 0, id: entry.id, tipo: entry.tipo };
+                }
+                urlCounts[key].count++;
+            });
+            const sortedUrls = Object.entries(urlCounts).sort((a,b) => b[1].count - a[1].count).slice(0, 10);
+            const topDiv = document.getElementById('topUrls');
+            let topHtml = '<table><thead><tr><th>URL</th><th>ID</th><th>Visitas</th><th>Tipo</th></tr></thead><tbody>';
+            sortedUrls.forEach(([url, info]) => {
+                topHtml += `<tr>
+                    <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${url}">
+                        <a href="https://${url}" target="_blank" rel="noopener noreferrer">${url}</a>
+                    </td>
+                    <td>#${info.id}</td>
+                    <td>${info.count}</td>
+                    <td>${info.tipo}</td>
+                </tr>`;
+            });
+            topHtml += '</tbody></table>';
+            topDiv.innerHTML = topHtml;
+        }
+
+        function clearAllData() {
+            if (confirm('¿Eliminar todas las verificaciones, accesos y filtros guardados?')) {
+                localStorage.removeItem('url_check_results');
+                localStorage.removeItem('url_access_log');
+                localStorage.removeItem('url_list_filters');
+                localStorage.removeItem('url_list_page');
+                location.reload();
+            }
+        }
+
+        renderChecksDashboard();
+        renderAccessDashboard();
+    </script>
+</body>
+</html>

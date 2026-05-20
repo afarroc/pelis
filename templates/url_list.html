@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Database - Panel de Control</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .navbar-nav {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover { transform: translateY(-2px); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+
+        .filters-panel {
+            background: var(--card);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        @media (max-width: 768px) {
+            .filters-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-light);
+            margin-bottom: 0.375rem;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background: var(--bg);
+            transition: border-color 0.2s;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #15803d; }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-outline:hover { background: var(--bg); }
+
+        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+
+        .table-container {
+            background: var(--card);
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th {
+            background: #f1f5f9;
+            color: var(--text);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 0.625rem 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        tr:hover { background: #f8fafc; }
+
+        .url-cell {
+            max-width: 280px;
+            word-break: break-all;
+        }
+
+        .url-cell a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .url-cell a:hover { text-decoration: underline; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .badge-original { background: #dcfce7; color: #166534; }
+        .badge-infringing { background: #fef2f2; color: #991b1b; }
+
+        .check-code {
+            font-weight: 700;
+            font-size: 0.8rem;
+            min-width: 40px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .check-code.ok { color: var(--success); }
+        .check-code.error { color: var(--danger); }
+        .check-code.timeout { color: var(--warning); }
+
+        .pagination-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .pagination-bar-top {
+            border-top: none;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-info { font-size: 0.875rem; color: var(--text-light); }
+        .page-buttons { display: flex; gap: 0.5rem; align-items: center; }
+
+        .page-size-select {
+            padding: 0.375rem 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            background: var(--bg);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        .spinner-inline {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #e2e8f0;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .access-log-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .access-log-btn:hover { transform: scale(1.1); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">🔗 URL Database</a>
+        <div class="navbar-nav">
+            <a href="/" class="nav-link">🏠 Inicio</a>
+            <a href="/url_list" class="nav-link active">📋 Lista</a>
+            <a href="/dashboard" class="nav-link">📊 Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value" id="statTotal">{{ urls|length }}</div>
+                <div class="stat-label">Total URLs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statFiltered">{{ urls|length }}</div>
+                <div class="stat-label">Mostradas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statOriginal">{{ urls|selectattr('type', 'equalto', 'original')|list|length }}</div>
+                <div class="stat-label">Originales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statInfringing">{{ urls|selectattr('type', 'equalto', 'infringing')|list|length }}</div>
+                <div class="stat-label">Infractoras</div>
+            </div>
+        </div>
+
+        <div class="filters-panel">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label>🔍 Buscar</label>
+                    <input type="text" id="searchInput" placeholder="URL, ID, documento...">
+                </div>
+                <div class="filter-group">
+                    <label>📂 Tipo</label>
+                    <select id="filterTipo">
+                        <option value="">Todos</option>
+                        <option value="video">Video</option>
+                        <option value="apk">APK</option>
+                        <option value="subtitulos">Subtítulos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>🌍 País</label>
+                    <select id="filterPais"><option value="">Todos</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>📄 Documento</label>
+                    <select id="filterDocumento"><option value="">Todos</option></select>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-outline btn-sm" id="clearFilters">🔄 Limpiar filtros</button>
+                <button class="btn btn-outline btn-sm" id="clearStorageBtn" title="Borra verificaciones, accesos y filtros guardados">🗑️ Limpiar datos guardados</button>
+                <span style="flex:1;"></span>
+                <button class="btn btn-outline btn-sm" id="exportCSVBtn">📥 Exportar CSV</button>
+                <button class="btn btn-outline btn-sm" id="exportJSONBtn">📥 Exportar JSON</button>
+                <button class="btn btn-success btn-sm" id="checkVisibleBtn" title="Verifica o re-verifica todas las URLs visibles en la página actual">✅ Verificar visibles</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <!-- Paginador superior -->
+            <div class="pagination-bar pagination-bar-top" id="paginationTop">
+                <div class="page-info" id="pageInfoTop">Mostrando <span id="showingStartTop">1</span>-<span id="showingEndTop">20</span> de <span id="totalFilteredTop">{{ urls|length }}</span></div>
+                <div class="page-buttons">
+                    <select class="page-size-select" id="pageSizeSelectTop">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" id="prevPageTop" disabled>◀ Anterior</button>
+                    <span style="padding:0.5rem;font-size:0.875rem;">Página <strong id="currentPageNumTop">1</strong></span>
+                    <button class="btn btn-outline btn-sm" id="nextPageTop">Siguiente ▶</button>
+                </div>
+            </div>
+
+            <table id="urlTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>URL</th>
+                        <th>Tipo</th>
+                        <th>Documento</th>
+                        <th>Fecha</th>
+                        <th>País</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    {% for url in urls %}
+                    <tr data-id="{{ url.id }}"
+                        data-url="{{ url.url }}"
+                        data-tipo="{{ url.tipo }}"
+                        data-documento="{{ url.documento }}"
+                        data-pais="{{ url.country }}">
+                        <td><strong>#{{ url.id }}</strong></td>
+                        <td class="url-cell">
+                            <a href="https://{{ url.url }}" target="_blank" rel="noopener noreferrer">{{ url.url }}</a>
+                        </td>
+                        <td>
+                            <span class="badge {% if url.type == 'original' %}badge-original{% else %}badge-infringing{% endif %}">
+                                {{ url.tipo }}
+                            </span>
+                        </td>
+                        <td><small>{{ url.documento[:30] }}{% if url.documento|length > 30 %}...{% endif %}</small></td>
+                        <td><small>{{ url.sent_on }}</small></td>
+                        <td>
+                            <span style="font-size:1.2em;">
+                                {% if url.country == 'IN' %}🇮🇳
+                                {% elif url.country == 'FR' %}🇫🇷
+                                {% elif url.country == 'US' %}🇺🇸
+                                {% elif url.country == 'GB' %}🇬🇧
+                                {% else %}{{ url.country }}{% endif %}
+                            </span>
+                            {{ url.country }}
+                        </td>
+                        <td>
+                            <button class="btn btn-outline btn-sm check-btn" data-url="{{ url.url }}" title="Clic para verificar o re-verificar">
+                                <span class="spinner-inline" style="display:none;"></span>
+                                <span class="btn-text">Verificar</span>
+                            </button>
+                            <span class="check-code">-</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Paginador inferior -->
+            <div class="pagination-bar" id="paginationBottom">
+                <div class="page-info" id="pageInfoBottom">Mostrando <span id="showingStartBottom">1</span>-<span id="showingEndBottom">20</span> de <span id="totalFilteredBottom">{{ urls|length }}</span></div>
+                <div class="page-buttons">
+                    <select class="page-size-select" id="pageSizeSelectBottom">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" id="prevPageBottom" disabled>◀ Anterior</button>
+                    <span style="padding:0.5rem;font-size:0.875rem;">Página <strong id="currentPageNumBottom">1</strong></span>
+                    <button class="btn btn-outline btn-sm" id="nextPageBottom">Siguiente ▶</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="no-results" id="noResults" style="display:none;">
+            <p>😕 No se encontraron URLs con esos filtros.</p>
+        </div>
+    </div>
+
+    <!-- Botón flotante para ver historial de accesos -->
+    <button class="access-log-btn" title="Ver historial de accesos" onclick="console.table(JSON.parse(localStorage.getItem('url_access_log')))">📋</button>
+
+    <script>
+        (function() {
+            const rows = Array.from(document.querySelectorAll('#tableBody tr'));
+            let currentPage = 1;
+            let rowsPerPage = 20;
+            let filteredRows = [...rows];
+
+            const STORAGE_CHECKS = 'url_check_results';
+            const STORAGE_FILTERS = 'url_list_filters';
+            const STORAGE_PAGE = 'url_list_page';
+            const STORAGE_PAGESIZE = 'url_list_pagesize';
+            const STORAGE_ACCESS = 'url_access_log';
+
+            // ──────────────────────────────────────
+            // PERSISTENCIA
+            // ──────────────────────────────────────
+            function loadChecks() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_CHECKS);
+                    return saved ? JSON.parse(saved) : {};
+                } catch(e) { return {}; }
+            }
+
+            function saveCheck(url, reachable, statusCode, message) {
+                const checks = loadChecks();
+                checks[url] = {
+                    reachable,
+                    statusCode: statusCode || null,
+                    message: message || '',
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(STORAGE_CHECKS, JSON.stringify(checks));
+            }
+
+            function applySavedChecks() {
+                const checks = loadChecks();
+                rows.forEach(row => {
+                    const url = row.dataset.url;
+                    if (checks[url]) {
+                        const btn = row.querySelector('.check-btn');
+                        const codeSpan = row.querySelector('.check-code');
+                        const textSpan = btn.querySelector('.btn-text');
+                        const c = checks[url];
+                        btn.classList.add('checked');
+                        if (c.reachable) {
+                            if (textSpan) textSpan.textContent = '✅ ' + (c.statusCode || 'OK') + ' 🔄';
+                            codeSpan.textContent = c.statusCode || 'OK';
+                            codeSpan.className = 'check-code ok';
+                        } else {
+                            let display = 'Error';
+                            if (c.message) {
+                                if (c.message.includes('timeout') || c.message.includes('Read timed out')) display = 'Timeout';
+                                else if (c.message.includes('NameResolutionError') || c.message.includes('Failed to resolve')) display = 'DNS Error';
+                            }
+                            if (textSpan) textSpan.textContent = '❌ ' + display + ' 🔄';
+                            codeSpan.textContent = display;
+                            codeSpan.className = 'check-code error';
+                        }
+                        btn.title = 'Clic para volver a verificar';
+                    }
+                });
+            }
+
+            function saveFilters() {
+                const filters = {
+                    search: document.getElementById('searchInput').value,
+                    tipo: document.getElementById('filterTipo').value,
+                    pais: document.getElementById('filterPais').value,
+                    documento: document.getElementById('filterDocumento').value
+                };
+                localStorage.setItem(STORAGE_FILTERS, JSON.stringify(filters));
+            }
+
+            function loadFilters() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_FILTERS);
+                    if (saved) {
+                        const f = JSON.parse(saved);
+                        document.getElementById('searchInput').value = f.search || '';
+                        document.getElementById('filterTipo').value = f.tipo || '';
+                        setTimeout(() => {
+                            document.getElementById('filterPais').value = f.pais || '';
+                            document.getElementById('filterDocumento').value = f.documento || '';
+                            applyFilters();
+                        }, 150);
+                    }
+                } catch(e) {}
+            }
+
+            function savePage() {
+                localStorage.setItem(STORAGE_PAGE, currentPage);
+                localStorage.setItem(STORAGE_PAGESIZE, rowsPerPage);
+            }
+
+            function loadPage() {
+                const p = parseInt(localStorage.getItem(STORAGE_PAGE));
+                if (p && p > 0) currentPage = p;
+                const size = parseInt(localStorage.getItem(STORAGE_PAGESIZE));
+                if (size && [10,20,50,100].includes(size)) {
+                    rowsPerPage = size;
+                    document.querySelectorAll('.page-size-select').forEach(sel => sel.value = size);
+                }
+            }
+
+            // ──────────────────────────────────────
+            // REGISTRO DE ACCESOS A URLs
+            // ──────────────────────────────────────
+            function saveAccessLog(url, id, tipo) {
+                const log = loadAccessLog();
+                log.push({
+                    url: url,
+                    id: id,
+                    tipo: tipo,
+                    timestamp: Date.now(),
+                    fecha: new Date().toISOString()
+                });
+                if (log.length > 500) log.splice(0, log.length - 500);
+                localStorage.setItem(STORAGE_ACCESS, JSON.stringify(log));
+            }
+
+            function loadAccessLog() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_ACCESS);
+                    return saved ? JSON.parse(saved) : [];
+                } catch(e) { return []; }
+            }
+
+            // ──────────────────────────────────────
+            // FILTROS Y PAGINACIÓN
+            // ──────────────────────────────────────
+            function populateSelects() {
+                const paises = new Set();
+                const documentos = new Set();
+                rows.forEach(r => {
+                    paises.add(r.dataset.pais);
+                    documentos.add(r.dataset.documento);
+                });
+
+                const paisSelect = document.getElementById('filterPais');
+                [...paises].sort().forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    paisSelect.appendChild(opt);
+                });
+
+                const docSelect = document.getElementById('filterDocumento');
+                [...documentos].sort().forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d.length > 40 ? d.substring(0,40)+'...' : d;
+                    docSelect.appendChild(opt);
+                });
+            }
+
+            function applyFilters() {
+                const search = document.getElementById('searchInput').value.toLowerCase();
+                const tipo = document.getElementById('filterTipo').value;
+                const pais = document.getElementById('filterPais').value;
+                const documento = document.getElementById('filterDocumento').value;
+
+                filteredRows = rows.filter(r => {
+                    const url = r.dataset.url.toLowerCase();
+                    const id = r.dataset.id;
+                    const doc = r.dataset.documento.toLowerCase();
+                    const matchesSearch = !search || url.includes(search) || id.includes(search) || doc.includes(search);
+                    const matchesTipo = !tipo || r.dataset.tipo === tipo;
+                    const matchesPais = !pais || r.dataset.pais === pais;
+                    const matchesDoc = !documento || r.dataset.documento === documento;
+                    return matchesSearch && matchesTipo && matchesPais && matchesDoc;
+                });
+
+                const maxPage = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+                if (currentPage > maxPage) currentPage = maxPage;
+
+                updateDisplay();
+                saveFilters();
+                savePage();
+            }
+
+            function updateDisplay() {
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+                const pageRows = filteredRows.slice(start, end);
+
+                rows.forEach(r => r.style.display = 'none');
+                pageRows.forEach(r => r.style.display = '');
+
+                // Actualizar ambos paginadores
+                const totalFiltered = filteredRows.length;
+                const showingStart = totalFiltered > 0 ? start + 1 : 0;
+                const showingEnd = Math.min(end, totalFiltered);
+                const maxPage = Math.max(1, Math.ceil(totalFiltered / rowsPerPage));
+
+                // Top
+                document.getElementById('showingStartTop').textContent = showingStart;
+                document.getElementById('showingEndTop').textContent = showingEnd;
+                document.getElementById('totalFilteredTop').textContent = totalFiltered;
+                document.getElementById('currentPageNumTop').textContent = currentPage;
+                document.getElementById('prevPageTop').disabled = currentPage === 1;
+                document.getElementById('nextPageTop').disabled = currentPage >= maxPage;
+
+                // Bottom
+                document.getElementById('showingStartBottom').textContent = showingStart;
+                document.getElementById('showingEndBottom').textContent = showingEnd;
+                document.getElementById('totalFilteredBottom').textContent = totalFiltered;
+                document.getElementById('currentPageNumBottom').textContent = currentPage;
+                document.getElementById('prevPageBottom').disabled = currentPage === 1;
+                document.getElementById('nextPageBottom').disabled = currentPage >= maxPage;
+
+                document.getElementById('noResults').style.display = totalFiltered === 0 ? 'block' : 'none';
+
+                document.getElementById('statFiltered').textContent = totalFiltered;
+                document.getElementById('statOriginal').textContent = filteredRows.filter(r => r.dataset.tipo === 'original').length;
+                document.getElementById('statInfringing').textContent = filteredRows.filter(r => r.dataset.tipo === 'infringing').length;
+
+                applySavedChecks();
+            }
+
+            // Sincronizar selectores de tamaño de página
+            function setupPageSizeSelectors() {
+                const topSelect = document.getElementById('pageSizeSelectTop');
+                const bottomSelect = document.getElementById('pageSizeSelectBottom');
+                
+                function changeSize(newSize) {
+                    rowsPerPage = parseInt(newSize);
+                    topSelect.value = newSize;
+                    bottomSelect.value = newSize;
+                    currentPage = 1;
+                    applyFilters();
+                }
+
+                topSelect.addEventListener('change', (e) => changeSize(e.target.value));
+                bottomSelect.addEventListener('change', (e) => changeSize(e.target.value));
+            }
+
+            // ──────────────────────────────────────
+            // EVENT LISTENERS
+            // ──────────────────────────────────────
+            document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; applyFilters(); });
+            document.getElementById('filterTipo').addEventListener('change', () => { currentPage = 1; applyFilters(); });
+            document.getElementById('filterPais').addEventListener('change', () => { currentPage = 1; applyFilters(); });
+            document.getElementById('filterDocumento').addEventListener('change', () => { currentPage = 1; applyFilters(); });
+
+            document.getElementById('clearFilters').addEventListener('click', () => {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('filterTipo').value = '';
+                document.getElementById('filterPais').value = '';
+                document.getElementById('filterDocumento').value = '';
+                currentPage = 1;
+                applyFilters();
+            });
+
+            // Paginación superior e inferior
+            function setupPaginationButtons(prefix) {
+                document.getElementById('prevPage' + prefix).addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        updateDisplay();
+                        savePage();
+                    }
+                });
+                document.getElementById('nextPage' + prefix).addEventListener('click', () => {
+                    const maxPage = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+                    if (currentPage < maxPage) {
+                        currentPage++;
+                        updateDisplay();
+                        savePage();
+                    }
+                });
+            }
+
+            setupPaginationButtons('Top');
+            setupPaginationButtons('Bottom');
+
+            // ──────────────────────────────────────
+            // CHECK INDIVIDUAL
+            // ──────────────────────────────────────
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.check-btn')) return;
+                const btn = e.target.closest('.check-btn');
+                if (btn.disabled) return;
+
+                const row = btn.closest('tr');
+                const codeSpan = row.querySelector('.check-code');
+                const spinner = btn.querySelector('.spinner-inline');
+                const textSpan = btn.querySelector('.btn-text');
+                const url = btn.dataset.url;
+
+                btn.disabled = true;
+                if (spinner) spinner.style.display = 'inline-block';
+                if (textSpan) textSpan.textContent = ' Verificando...';
+                codeSpan.textContent = '...';
+                codeSpan.className = 'check-code';
+
+                fetch(`/check_url?url=${encodeURIComponent(url)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        btn.disabled = false;
+                        if (spinner) spinner.style.display = 'none';
+                        if (data.reachable) {
+                            const code = data.status_code || 'OK';
+                            if (textSpan) textSpan.textContent = '✅ ' + code + ' 🔄';
+                            codeSpan.textContent = code;
+                            codeSpan.className = 'check-code ok';
+                        } else {
+                            let msg = 'Error';
+                            if (data.message) {
+                                if (data.message.includes('timeout') || data.message.includes('Read timed out')) msg = 'Timeout';
+                                else if (data.message.includes('NameResolutionError') || data.message.includes('Failed to resolve')) msg = 'DNS Error';
+                            }
+                            if (textSpan) textSpan.textContent = '❌ ' + msg + ' 🔄';
+                            codeSpan.textContent = msg;
+                            codeSpan.className = 'check-code error';
+                        }
+                        btn.title = 'Clic para volver a verificar';
+                        saveCheck(url, data.reachable, data.status_code, data.message);
+                    })
+                    .catch(() => {
+                        btn.disabled = false;
+                        if (spinner) spinner.style.display = 'none';
+                        if (textSpan) textSpan.textContent = '❌ Error 🔄';
+                        codeSpan.textContent = 'Error';
+                        codeSpan.className = 'check-code error';
+                        btn.title = 'Clic para volver a verificar';
+                        saveCheck(url, false, null, 'Error de red');
+                    });
+            });
+
+            // ──────────────────────────────────────
+            // CHECK VISIBLES (con delay)
+            // ──────────────────────────────────────
+            document.getElementById('checkVisibleBtn').addEventListener('click', function() {
+                const visibleRows = rows.filter(r => r.style.display !== 'none');
+                let i = 0;
+                function checkNext() {
+                    if (i >= visibleRows.length) return;
+                    const btn = visibleRows[i].querySelector('.check-btn');
+                    if (btn && !btn.disabled) btn.click();
+                    i++;
+                    setTimeout(checkNext, 300);
+                }
+                checkNext();
+            });
+
+            // ──────────────────────────────────────
+            // REGISTRO DE CLICS EN URLs
+            // ──────────────────────────────────────
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('.url-cell a');
+                if (!link) return;
+                const row = link.closest('tr');
+                if (!row) return;
+                const url = row.dataset.url;
+                const id = row.dataset.id;
+                const tipo = row.dataset.tipo;
+                saveAccessLog(url, id, tipo);
+            });
+
+            // ──────────────────────────────────────
+            // LIMPIAR DATOS GUARDADOS
+            // ──────────────────────────────────────
+            document.getElementById('clearStorageBtn').addEventListener('click', function() {
+                if (confirm('¿Estás seguro de que deseas borrar todas las verificaciones, accesos y filtros guardados? Esta acción no se puede deshacer.')) {
+                    localStorage.removeItem(STORAGE_CHECKS);
+                    localStorage.removeItem(STORAGE_FILTERS);
+                    localStorage.removeItem(STORAGE_PAGE);
+                    localStorage.removeItem(STORAGE_PAGESIZE);
+                    localStorage.removeItem(STORAGE_ACCESS);
+                    location.reload();
+                }
+            });
+
+            // ──────────────────────────────────────
+            // EXPORTAR CSV (con verificación)
+            // ──────────────────────────────────────
+            document.getElementById('exportCSVBtn').addEventListener('click', function() {
+                const checks = loadChecks();
+                const rowsToExport = filteredRows.map(r => {
+                    const url = r.dataset.url;
+                    const check = checks[url] || {};
+                    return {
+                        id: r.dataset.id,
+                        url: url,
+                        tipo: r.dataset.tipo,
+                        documento: r.dataset.documento,
+                        fecha: r.querySelector('td:nth-child(5)').textContent,
+                        pais: r.dataset.pais,
+                        reachable: check.reachable !== undefined ? check.reachable : '',
+                        status_code: check.statusCode || '',
+                        message: check.message || ''
+                    };
+                });
+                if (rowsToExport.length === 0) { alert('No hay datos para exportar.'); return; }
+                let csv = 'ID,URL,Tipo,Documento,Fecha,País,Alcanzable,Código,Mensaje\n';
+                rowsToExport.forEach(r => {
+                    csv += `"${r.id}","${r.url}","${r.tipo}","${r.documento}","${r.fecha}","${r.pais}","${r.reachable}","${r.status_code}","${r.message}"\n`;
+                });
+                const blob = new Blob([csv], {type: 'text/csv'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'urls_export.csv';
+                a.click();
+            });
+
+            // ──────────────────────────────────────
+            // EXPORTAR JSON (con verificación)
+            // ──────────────────────────────────────
+            document.getElementById('exportJSONBtn').addEventListener('click', function() {
+                const checks = loadChecks();
+                const rowsToExport = filteredRows.map(r => {
+                    const url = r.dataset.url;
+                    const check = checks[url] || {};
+                    return {
+                        id: r.dataset.id,
+                        url: url,
+                        tipo: r.dataset.tipo,
+                        documento: r.dataset.documento,
+                        fecha: r.querySelector('td:nth-child(5)').textContent,
+                        pais: r.dataset.pais,
+                        reachable: check.reachable !== undefined ? check.reachable : null,
+                        status_code: check.statusCode || null,
+                        message: check.message || null
+                    };
+                });
+                if (rowsToExport.length === 0) { alert('No hay datos para exportar.'); return; }
+                const blob = new Blob([JSON.stringify(rowsToExport, null, 2)], {type: 'application/json'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'urls_export.json';
+                a.click();
+            });
+
+            // ──────────────────────────────────────
+            // INICIALIZACIÓN
+            // ──────────────────────────────────────
+            populateSelects();
+            loadPage();
+            setupPageSizeSelectors();
+            applySavedChecks();
+
+            if (localStorage.getItem(STORAGE_FILTERS)) {
+                loadFilters();
+            } else {
+                applyFilters();
+            }
+        })();
+    </script>
+</body>
+</html>
